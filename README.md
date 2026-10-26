@@ -1,3 +1,5 @@
+![Demo](docs/demo.gif)
+
 # local-rag-chat
 
 Chat with your own documents (PDF, TXT, MD) using a local LLM. Everything runs on your machine, no API keys needed.
