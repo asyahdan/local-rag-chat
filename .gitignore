@@ -1,0 +1,15 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Project
+chroma_db/
+data/*
+!data/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
