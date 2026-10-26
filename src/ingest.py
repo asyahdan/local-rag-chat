@@ -12,7 +12,7 @@ from sentence_transformers import SentenceTransformer
 DATA_DIR = Path("data")
 DB_DIR = "chroma_db"
 COLLECTION = "docs"
-EMBED_MODEL = "all-MiniLM-L6-v2"
+EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 CHUNK_SIZE = 800      # characters per chunk
 CHUNK_OVERLAP = 150   # characters shared between neighbouring chunks
 

@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 
 DB_DIR = "chroma_db"
 COLLECTION = "docs"
-EMBED_MODEL = "all-MiniLM-L6-v2"
+EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 DEFAULT_LLM = "llama3.2:3b"
 TOP_K = 4  # how many chunks to retrieve
 
