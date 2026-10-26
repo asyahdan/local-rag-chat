@@ -13,12 +13,18 @@ from sentence_transformers import SentenceTransformer
 
 DB_DIR = "chroma_db"
 COLLECTION = "docs"
-EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+EMBED_MODEL = "all-MiniLM-L6-v2"
 DEFAULT_LLM = "llama3.2:3b"
 TOP_K = 4  # how many chunks to retrieve
+NUM_CTX = 8192  # context window sent to Ollama (the default is often too small)
 
-PROMPT_TEMPLATE = """You are a helpful assistant. Answer the question using ONLY the context below.
-If the answer is not in the context, say "I couldn't find that in the documents."
+PROMPT_TEMPLATE = """You are a careful assistant that helps the user understand their documents.
+Always reply in the same language as the question.
+
+Rules:
+- For factual questions, answer only from the context. If the answer is not there, say so.
+- If the user asks for weaknesses, opinions, or suggestions, base them on what the context says,
+  and clearly label which parts are your own suggestions.
 
 Context:
 {context}
@@ -44,6 +50,7 @@ def ask(question: str, llm: str, embedder: SentenceTransformer, collection) -> N
         model=llm,
         messages=[{"role": "user", "content": prompt}],
         stream=True,
+        options={"num_ctx": NUM_CTX},
     )
     for part in stream:
         print(part["message"]["content"], end="", flush=True)

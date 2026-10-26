@@ -9,7 +9,7 @@ import streamlit as st
 from sentence_transformers import SentenceTransformer
 
 from ingest import DATA_DIR, DB_DIR, COLLECTION, EMBED_MODEL, chunk_text, read_file
-from query import DEFAULT_LLM, PROMPT_TEMPLATE, retrieve
+from query import DEFAULT_LLM, NUM_CTX, PROMPT_TEMPLATE, retrieve
 
 st.set_page_config(page_title="Local RAG Chat", page_icon="💬", layout="wide")
 
@@ -61,9 +61,27 @@ def stream_answer(model: str, prompt: str):
         model=model,
         messages=[{"role": "user", "content": prompt}],
         stream=True,
+        options={"num_ctx": NUM_CTX},
     )
     for part in stream:
         yield part["message"]["content"]
+
+
+def get_all_chunks(max_chars: int = 15000):
+    """Return the document's chunks in reading order (for summaries and analysis)."""
+    data = load_collection().get(include=["documents", "metadatas"])
+    items = sorted(
+        zip(data["documents"], data["metadatas"]),
+        key=lambda x: (x[1]["source"], x[1]["chunk"]),
+    )
+    docs, metas, total = [], [], 0
+    for doc, meta in items:
+        if total + len(doc) > max_chars:
+            break
+        docs.append(doc)
+        metas.append(meta)
+        total += len(doc)
+    return docs, metas
 
 
 def show_sources(docs: list[str], metas: list[dict]) -> None:
@@ -83,6 +101,11 @@ with st.sidebar:
     default_index = models.index(DEFAULT_LLM) if DEFAULT_LLM in models else 0
     model = st.selectbox("LLM (Ollama)", models, index=default_index)
     top_k = st.slider("Chunks to retrieve", 1, 8, 4)
+    mode = st.radio(
+        "Mode",
+        ["Quick answer (top chunks)", "Whole document (analysis)"],
+        help="Use 'Whole document' for summaries, weaknesses, or suggestions.",
+    )
 
     st.divider()
     st.header("Documents")
@@ -128,7 +151,10 @@ if question := st.chat_input("Ask something about your documents..."):
             st.markdown(answer)
             st.session_state.messages.append({"role": "assistant", "content": answer})
         else:
-            docs, metas = retrieve(question, embedder, collection, k=min(top_k, count))
+            if mode.startswith("Whole"):
+                docs, metas = get_all_chunks()
+            else:
+                docs, metas = retrieve(question, embedder, collection, k=min(top_k, count))
             prompt = PROMPT_TEMPLATE.format(context="\n\n---\n\n".join(docs), question=question)
             try:
                 answer = st.write_stream(stream_answer(model, prompt))
